@@ -65,7 +65,6 @@ teleport_compile_target:
 	    tsh \
 	    tctl \
 	    tbot \
-	    fdpass-teleport; \
 	  do \
 	    echo " … building $$bin"; \
 	    CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GO_ARCH) \
