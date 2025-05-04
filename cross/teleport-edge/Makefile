@@ -30,26 +30,12 @@ ENV_LOCAL := $(MAKEFILE_DIR)/.env
 
 # 2.a) Load root defaults, conditionally (`?=`) so OS env wins
 ifneq (,$(wildcard $(ENV_ROOT)))
-  $(eval \
-    $(shell sed -ne '\
-s/ *#.*$$//; \
-/^[[:space:]]*$$/d; \
-s/^\([^=]\+\)=\(.*\)$$/\1 ?= \2/p' \
-      $(ENV_ROOT) \
-    ) \
-  )
+	$(eval $(shell sed -ne s/ *#.*$$//; /^[[:space:]]*$$/d; s/^\([^=]\+\)=\(.*\)$$/\1 ?= \2/p' $(ENV_ROOT)))
 endif
 
 # 2.b) Apply local overrides, but skip shell-exported vars
 ifneq (,$(wildcard $(ENV_LOCAL)))
-  $(eval \
-    $(shell sed -ne '\
-s/ *#.*$$//; \
-/^[[:space:]]*$$/d; \
-s/^\([^=]\+\)=\(.*\)$$/ifneq ($(origin \1),environment)\n\1 = \2\nendif/p' \
-      $(ENV_LOCAL) \
-    ) \
-  )
+	$(eval $(shell sed -ne s/ *#.*$$//; /^[[:space:]]*$$/d; s/^\([^=]\+\)=\(.*\)$$/ifneq ($(origin \1),environment)\n\1 = \2\nendif/p' $(ENV_LOCAL)))
 endif
 
 # 2.c) Export everything for downstream includes and recipes
@@ -84,10 +70,7 @@ LICENSE       = AGPL-3.0
 # -----------------------------------------------------------------------------
 # 6) Architectures we explicitly do NOT support
 # -----------------------------------------------------------------------------
-UNSUPPORTED_ARCHS = $(PPC_ARCHS) \
-                    $(ARMv5_ARCHS) \
-                    $(i686_ARCHS) \
-                    $(ARMv7L_ARCHS)
+UNSUPPORTED_ARCHS = $(PPC_ARCHS) $(ARMv5_ARCHS) $(i686_ARCHS) $(ARMv7L_ARCHS)
 
 # -----------------------------------------------------------------------------
 # 7) Define Go source and output paths
@@ -113,6 +96,7 @@ COMPILE_TARGET = teleport_compile_target
 # -----------------------------------------------------------------------------
 # 10) Pull in spksrc’s cross‐compile rules for Go
 # -----------------------------------------------------------------------------
+
 include $(MKPATH)/spksrc.cross-go.mk
 
 # -----------------------------------------------------------------------------
@@ -120,11 +104,4 @@ include $(MKPATH)/spksrc.cross-go.mk
 # -----------------------------------------------------------------------------
 teleport_compile_target:
 	@echo "===> Building Teleport v$(PKG_VERS) for $(GO_ARCH) (GOARM=$(GOARM))"
-	$(RUN) cd $(GO_SRC_DIR) && \
-	  CGO_ENABLED=$(CGO_ENABLED) \
-	  GOOS=linux GOARCH=$(GO_ARCH) GOARM=$(GOARM) \
-	  go build \
-	    -trimpath \
-	    -ldflags "$(GO_LDFLAGS)" \
-	    -o $(STAGING_DIR)/bin/teleport \
-	    ./lib
+	$(RUN) cd $(GO_SRC_DIR) && CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GO_ARCH) GOARM=$(GOARM) go build -trimpath -ldflags "$(GO_LDFLAGS)" -o $(STAGING_DIR)/bin/teleport ./lib
