@@ -78,4 +78,4 @@ include $(MKPATH)/spksrc.cross-go.mk
 # -----------------------------------------------------------------------------
 teleport_compile_target:
 	@echo "===> Building Teleport v$(PKG_VERS) for $(GO_ARCH) (GOARM=$(GOARM))"
-	$(RUN) cd $(GO_SRC_DIR) && CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GO_ARCH) GOARM=$(GOARM) go build -trimpath -ldflags "$(GO_LDFLAGS)" -o $(STAGING_DIR)/bin/teleport ./lib
+	$(RUN) sh -c 'cd $(GO_SRC_DIR) && CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GO_ARCH) GOARM=$(GOARM) go build -trimpath -ldflags "$(GO_LDFLAGS)" -o $(STAGING_DIR)/bin/teleport ./lib'
