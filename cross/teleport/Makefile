@@ -1,5 +1,5 @@
 ## =============================================================================
-## Teleport Edge Cross‐Compile Makefile
+## Teleport Cross‐Compile Makefile
 ## -----------------------------------------------------------------------------
 ## This Makefile defines how to fetch, verify, and build the Teleport Go
 ## source for each supported Synology architecture using spksrc’s cross‐compile
@@ -15,18 +15,6 @@ MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 MAKEFILE_DIR  := $(dir   $(MAKEFILE_PATH))
 # MKPATH        : path to the shared mk/ directory (spksrc’s core rules)
 MKPATH        := $(realpath $(MAKEFILE_DIR)/../../mk)
-
-# -----------------------------------------------------------------------------
-# 2) Load environment‐driven defaults
-#
-#    - ENV_ROOT: shared teleport-edge.env for SPK_NAME, SPK_VERS, etc.
-#    - ENV_LOCAL: local .env for package‐specific overrides
-#    - First pass   : assign "?= VALUE" so that existing env vars win
-#    - Second pass  : force-assign "= VALUE" for any keys not set by shell
-#    - export       : make all variables available to downstream mkfiles
-# -----------------------------------------------------------------------------
-ENV_ROOT := $(realpath $(MAKEFILE_DIR)/../../teleport-edge.env)
-ENV_LOCAL := $(MAKEFILE_DIR)/.env
 
 # -----------------------------------------------------------------------------
 # 3) Package identity & source distribution variables
@@ -83,7 +71,6 @@ COMPILE_TARGET = teleport_compile_target
 # -----------------------------------------------------------------------------
 # 10) Pull in spksrc’s cross‐compile rules for Go
 # -----------------------------------------------------------------------------
-
 include $(MKPATH)/spksrc.cross-go.mk
 
 # -----------------------------------------------------------------------------

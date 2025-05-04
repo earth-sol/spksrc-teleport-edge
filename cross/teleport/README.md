@@ -23,7 +23,7 @@ This directory contains the **spksrc** cross‐compile rules and support files f
 
 ## Overview
 
-The `cross/teleport-edge` subdirectory defines how to:
+The `cross/teleport` subdirectory defines how to:
 
 - Download the Teleport source archive (`teleport-v$(SPK_VERS).tar.gz`).  
 - Verify its integrity against checksums in `digests`.  
@@ -46,7 +46,7 @@ Once built, these binaries are picked up by the `spk/teleport` packaging step.
 ## Directory Layout
 
 ```
-cross/teleport-edge/
+cross/teleport/
 ├── Makefile         # Cross-build instructions
 ├── digests          # SHA1, SHA256, MD5 sums for source archives
 ├── PLIST            # Files to stage into the binary package
@@ -74,11 +74,11 @@ Two levels of configuration are supported via `.env` files:
    PKG_EXT=tar.gz
    MAINTAINER=earth-sol
    DESCRIPTION="Teleport provides secure SSH, App, and Database access..."
-   DISPLAY_NAME=Teleport Edge
+   DISPLAY_NAME=Teleport
    CHANGELOG="\"Initial build\""
    PKG_DIST_SITE=https://github.com/gravitational/teleport/archive/refs/tags
    ```
-2. **Local overrides** in `cross/teleport-edge/.env` (optional):
+2. **Local overrides** in `cross/teleport/.env` (optional):
    ```env
    SPK_VERS=17.4.8
    ```
@@ -99,7 +99,7 @@ The Makefile loads `ENV_ROOT` first (using `?=` assignments) so that environment
 
 1. After bumping `PKG_VERS`, run:
    ```bash
-   cd cross/teleport-edge
+   cd cross/teleport
    make digests
    ```
    This will:
@@ -116,14 +116,14 @@ The Makefile loads `ENV_ROOT` first (using `?=` assignments) so that environment
 To build for a single architecture (e.g. `arch-x64-7.2`):
 
 ```bash
-cd cross/teleport-edge
+cd cross/teleport
 make arch-x64-7.2
 ```
 
 To build for all supported architectures:
 
 ```bash
-cd cross/teleport-edge
+cd cross/teleport
 make arch-all
 ```
 

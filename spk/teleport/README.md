@@ -1,4 +1,4 @@
-# Teleport Edge SPK
+# Teleport SPK
 
 This directory contains everything needed to package the Teleport server agent into a Synology `.spk`. Once built, the resulting package can be installed on DSM 7.2 (and later) to turn your NAS into a Teleport node—with SSH, Application, and Database proxy capabilities—and full lifecycle hooks.
 
@@ -24,7 +24,7 @@ This directory contains everything needed to package the Teleport server agent i
 
 ## Overview
 
-The Teleport Edge SPK bundles the **Teleport server binary** (compiled via `cross/teleport-edge`) and integrates it with Synology DSM. It provides:
+The Teleport SPK bundles the **Teleport server binary** (compiled via `cross/teleport`) and integrates it with Synology DSM. It provides:
 
 - **SSH Service** with built-in reverse-tunnel support  
 - **Application Service** exposing the DSM Control Panel UI plus optional dynamic app registration  
@@ -38,9 +38,9 @@ The Teleport Edge SPK bundles the **Teleport server binary** (compiled via `cros
 - A working **spksrc** checkout with:
   ```
   spksrc/
-  ├── cross/teleport-edge/  # builds the Teleport server binary
-  ├── spk/teleport-edge/    # this directory
-  └── mk/                   # spksrc core rules
+  ├── cross/teleport/  # builds the Teleport server binary
+  ├── spk/teleport/    # this directory
+  └── mk/              # spksrc core rules
   ```
 - **Go** toolchain available for the cross-compile stage  
 - Internet access (or local mirror) to fetch the Teleport source tarball  
@@ -51,7 +51,7 @@ The Teleport Edge SPK bundles the **Teleport server binary** (compiled via `cros
 ## Directory Layout
 
 ```
-spk/teleport-edge/
+spk/teleport/
 ├── Makefile            # SPK packaging rules
 ├── conf/
 │   ├── install_uifile  # JSON installer wizard definition
@@ -67,16 +67,16 @@ spk/teleport-edge/
 
 1. **Cross-compile** the Teleport server binary:
    ```bash
-   cd spksrc/cross/teleport-edge
+   cd spksrc/cross/teleport
    make digests         # regenerate checksums if updating version
    make arch-all        # build for all target architectures
    ```
 2. **Package** into a `.spk`:
    ```bash
-   cd spksrc/spk/teleport-edge
+   cd spksrc/spk/teleport
    make                 # invokes spksrc.spk.mk to assemble the SPK
    ```
-3. The built `output/teleport-edge-<version>.spk` can then be uploaded to DSM via Package Center.
+3. The built `output/teleport-<version>.spk` can then be uploaded to DSM via Package Center.
 
 ---
 
@@ -163,7 +163,7 @@ Teleport agents use **outbound** reverse tunnels to the Proxy—**no inbound fir
 
 ## Customization & Maintenance
 
-- **Bump version**: update `teleport-edge.env`, run `make digests` in `cross/teleport-edge`, then rebuild.  
+- **Bump version**: update `teleport.env`, run `make digests` in `cross/teleport`, then rebuild.  
 - **Adjust wizard**: edit `conf/install_uifile` to add or rename installer fields and update `service-setup.sh` accordingly.  
 - **Modify service behavior**: update `src/service-setup.sh` hooks.  
 - **Change package contents**: edit `spk/teleport-edge/Makefile` or add scripts under `src/`.

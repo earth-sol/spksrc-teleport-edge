@@ -1,8 +1,8 @@
 ## =============================================================================
-## Teleport Edge SPK Makefile
+## Teleport SPK Makefile
 ## -----------------------------------------------------------------------------
-## This Makefile orchestrates the packaging of the Teleport-Edge SPK:
-##   - Loads shared metadata from teleport-edge.env and applies local overrides
+## This Makefile orchestrates the packaging of the Teleport SPK:
+##   - Loads shared metadata from teleport.env and applies local overrides
 ##   - Declares dependency on the cross-compiled Teleport binary
 ##   - Configures service control (start/stop/status) via spksrc’s hooks
 ##   - Includes the installer wizard definitions and DSM privilege settings
@@ -26,7 +26,7 @@ MKPATH        := $(realpath $(MAKEFILE_DIR)/../../mk)
 SPK_NAME     ?= teleport
 SPK_VERS     ?= 17.4.7
 SPK_REV      ?= 2
-DISPLAY_NAME ?= "Teleport Edge"
+DISPLAY_NAME ?= "Teleport"
 DESCRIPTION  ?= "Teleport provides simple secure access to SSH servers, Kubernetes clusters, PostgreSQL databases and web apps behind NAT, in any environment."
 CHANGELOG    ?= "Broad updates across multiple upstream"
 MAINTAINER   ?= earth-sol
@@ -37,7 +37,7 @@ MAINTAINER   ?= earth-sol
 #    - LICENSE : SPDX license identifier
 #    - PKG_EXT : file extension for archives (from .env/env, with defaults)
 # -----------------------------------------------------------------------------
-SPK_ICON     = src/teleport-edge.png
+SPK_ICON     = src/teleport.png
 LICENSE      = AGPL-3.0
 PKG_EXT     ?= tar.gz
 
@@ -45,7 +45,7 @@ PKG_EXT     ?= tar.gz
 # 5) Runtime dependency on the cross-compiled Teleport binary
 #    DEPENDS ensures cross/teleport is built before packaging
 # -----------------------------------------------------------------------------
-DEPENDS      = cross/teleport-edge
+DEPENDS      = cross/teleport
 
 # -----------------------------------------------------------------------------
 # 6) Service control configuration

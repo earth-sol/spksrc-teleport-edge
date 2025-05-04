@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Teleport Edge SPK service hooks
+# Teleport SPK service hooks
 # Integrates spksrc’s generic installer and start-stop-status to manage
 # install, upgrade, uninstall, backup, and restore on DSM.
 #
