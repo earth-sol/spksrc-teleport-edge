@@ -1,0 +1,225 @@
+[
+  {
+    "step_title": "Cluster Settings",
+    "items": [
+      {
+        "type": "textfield",
+        "desc": "Teleport node name",
+        "subitems": [
+          {
+            "key": "node_name",
+            "desc": "Unique identifier for this node",
+            "defaultValue": "synology",
+            "validator": {
+              "allowBlank": false,
+              "regex": {
+                "expr": "/^[A-Za-z0-9_-]+$/",
+                "errorText": "Only letters, numbers, dash or underscore"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "textfield",
+        "desc": "Teleport proxy address (host:port)",
+        "subitems": [
+          {
+            "key": "proxy_address",
+            "desc": "e.g. teleport.example.com:443",
+            "defaultValue": "teleport.example.com:443",
+            "validator": {
+              "allowBlank": false,
+              "regex": {
+                "expr": "/^([A-Za-z0-9_-]+\\.)*[A-Za-z0-9_-]+:[0-9]+$/",
+                "errorText": "Valid hostname and port"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "textfield",
+        "desc": "Cluster join token",
+        "subitems": [
+          {
+            "key": "join_token",
+            "desc": "Authentication token for joining",
+            "defaultValue": "",
+            "validator": {
+              "allowBlank": false,
+              "regex": {
+                "expr": "/^[a-f0-9]+$/",
+                "errorText": "Lowercase hexadecimal only"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "textfield",
+        "desc": "Optional CA pin (SPKI hash) to pin your cluster’s root certificate",
+        "subitems": [
+          {
+            "key": "ca_pin",
+            "desc": "sha256:<hex> (leave blank to trust system CAs)",
+            "defaultValue": "",
+            "validator": {
+              "allowBlank": true,
+              "regex": {
+                "expr": "/^sha256:[a-f0-9]+$/",
+                "errorText": "Blank or format sha256:<lowercase hex>"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "step_title": "DSM UI & SSH Service",
+    "items": [
+      {
+        "type": "textfield",
+        "desc": "DSM Control Panel UI address",
+        "subitems": [
+          {
+            "key": "dsm_ui_address",
+            "desc": "Local UI endpoint (host:port)",
+            "defaultValue": "localhost:5001",
+            "validator": {
+              "allowBlank": false,
+              "regex": {
+                "expr": "/^([A-Za-z0-9_-]+\\.)*[A-Za-z0-9_-]+:[0-9]+$/",
+                "errorText": "Valid hostname/IP:port"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "multiselect",
+        "desc": "Enable Teleport SSH service",
+        "subitems": [
+          {
+            "key": "enable_ssh_service",
+            "desc": "Run Teleport’s built-in SSH server",
+            "defaultValue": true
+          }
+        ]
+      },
+      {
+        "type": "textfield",
+        "desc": "SSH listen address",
+        "subitems": [
+          {
+            "key": "ssh_listen_address",
+            "desc": "Defaults to 0.0.0.0:3022 if blank",
+            "defaultValue": "",
+            "validator": {
+              "allowBlank": true,
+              "regex": {
+                "expr": "/^([0-9.]+|[A-Za-z0-9_-]+\\.)*[A-Za-z0-9_-]+:[0-9]+$/",
+                "errorText": "Valid address:port"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "type": "textfield",
+        "desc": "SSH public address",
+        "subitems": [
+          {
+            "key": "ssh_public_address",
+            "desc": "Advertised host:port (leave blank to omit)",
+            "defaultValue": "",
+            "validator": {
+              "allowBlank": true,
+              "regex": {
+                "expr": "/^([0-9.]+|[A-Za-z0-9_-]+\\.)*[A-Za-z0-9_-]+:[0-9]+$/",
+                "errorText": "Valid address:port"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "step_title": "Configuration & Data Paths",
+    "items": [
+      {
+        "type": "textfield",
+        "desc": "Teleport configuration directory",
+        "subitems": [
+          {
+            "key": "config_dir",
+            "desc": "e.g. /volume1/teleport/etc (leave blank for default)",
+            "defaultValue": "",
+            "validator": {
+              "allowBlank": true
+            }
+          }
+        ]
+      },
+      {
+        "type": "textfield",
+        "desc": "Teleport data directory",
+        "subitems": [
+          {
+            "key": "data_dir",
+            "desc": "e.g. /volume1/teleport/data (leave blank for default)",
+            "defaultValue": "",
+            "validator": {
+              "allowBlank": true
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "step_title": "Dynamic Resource Discovery",
+    "items": [
+      {
+        "type": "multiselect",
+        "desc": "Enable dynamic application registration",
+        "subitems": [
+          {
+            "key": "enable_dynamic_apps",
+            "desc": "Automatically register all cluster apps",
+            "defaultValue": false
+          }
+        ]
+      },
+      {
+        "type": "multiselect",
+        "desc": "Enable dynamic database registration",
+        "subitems": [
+          {
+            "key": "enable_dynamic_databases",
+            "desc": "Automatically register all cluster databases",
+            "defaultValue": false
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "step_title": "Cleanup Options",
+    "items": [
+      {
+        "type": "multiselect",
+        "desc": "Remove config & data on uninstall",
+        "subitems": [
+          {
+            "key": "remove_config_data",
+            "desc": "Purge configuration and data directories",
+            "defaultValue": false
+          }
+        ]
+      }
+    ]
+  }
+]
