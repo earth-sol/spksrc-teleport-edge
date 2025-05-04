@@ -56,27 +56,7 @@ native_go:
 
 # 14) Compile Teleport OSS with Community UI assets
 teleport_compile_target:
-	@echo "===> Building Teleport v$(PKG_VERS) (OSS) for $(GO_ARCH)"
-	$(RUN) sh -c '\
-	  cd $(GO_SRC_DIR) && mkdir -p build && \
-	  for bin in \
-	    teleport \
-	    teleport-update \
-	    tsh \
-	    tctl \
-	    tbot; \
-	  do \
-	    echo " ... building $$bin"; \
-	    CGO_ENABLED=$(CGO_ENABLED) \
-	    GOOS=linux GOARCH=$(GO_ARCH) \
-	    go build \
-	      -tags=webassets_embed \
-	      -trimpath \
-	      -ldflags "$(GO_LDFLAGS)" \
-	      -o build/$$bin \
-	      ./cmd/$$bin; \
-	  done \
-	  '
+	@echo "===> Building Teleport v$(PKG_VERS) (OSS) for $(GO_ARCH)" ; $(RUN) sh -c 'cd $(GO_SRC_DIR) && mkdir -p build && for bin in teleport teleport-update tsh tctl tbot; do echo " ... building $$bin"; CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GO_ARCH) go build -tags=webassets_embed -trimpath -ldflags "$(GO_LDFLAGS)" -o build/$$bin ./tool/$$bin; done'
 
 # 15) Stage step: installs build/<bin> into the staging area
 go_install_target: teleport_compile_target
