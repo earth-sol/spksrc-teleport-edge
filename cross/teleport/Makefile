@@ -55,19 +55,9 @@ native_go:
 	$(MAKE) -C $(NATIVE_GO_DIR)
 
 # 14) Compile Teleport: ensure sources are extracted and patched first
-teleport_compile_target: extract patch
+teleport_compile_target:
 	@echo "===> Building Teleport v$(PKG_VERS) for $(GO_ARCH) (GOARM=$(GOARM))"
-	$(RUN) sh -c '\
-	  cd $(GO_SRC_DIR) && \
-	  mkdir -p build && \
-	  CGO_ENABLED=$(CGO_ENABLED) \
-	    GOOS=linux GOARCH=$(GO_ARCH) GOARM=$(GOARM) \
-	  go build \
-	    -trimpath \
-	    -ldflags "$(GO_LDFLAGS)" \
-	    -o build/teleport \
-	    ./lib \
-	'
+	$(RUN) sh -c 'cd $(GO_SRC_DIR) && mkdir -p build && CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GO_ARCH) GOARM=$(GOARM) go build -trimpath -ldflags "$(GO_LDFLAGS)" -o build/teleport ./lib'
 
 # 15) Stage step: installs build/teleport into the staging area
 go_install_target: teleport_compile_target
