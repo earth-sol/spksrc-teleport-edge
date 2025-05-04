@@ -19,45 +19,6 @@ MAKEFILE_DIR  := $(dir   $(MAKEFILE_PATH))
 MKPATH        := $(realpath $(MAKEFILE_DIR)/../../mk)
 
 # -----------------------------------------------------------------------------
-# 2) Load environment‐driven defaults
-#
-#    - ENV_ROOT: shared teleport-edge.env for SPK_NAME, SPK_VERS, etc.
-#    - ENV_LOCAL: local .env for package‐specific overrides
-#    - First pass   : assign "?= VALUE" so that existing env vars win
-#    - Second pass  : force-assign "= VALUE" for any keys not set by shell
-#    - export       : make all variables available to downstream mkfiles
-# -----------------------------------------------------------------------------
-ENV_ROOT := $(realpath $(MAKEFILE_DIR)/../../teleport-edge.env)
-ENV_LOCAL := $(MAKEFILE_DIR)/.env
-
-# 2.a) Load root defaults, conditionally (`?=`) so OS env wins
-ifneq (,$(wildcard $(ENV_ROOT)))
-  $(eval \
-    $(shell sed -ne '\
-s/ *#.*$$//; \
-/^[[:space:]]*$$/d; \
-s/^\([^=]\+\)=\(.*\)$$/\1 ?= \2/p' \
-      $(ENV_ROOT) \
-    ) \
-  )
-endif
-
-# 2.b) Apply local overrides, but skip shell-exported vars
-ifneq (,$(wildcard $(ENV_LOCAL)))
-  $(eval \
-    $(shell sed -ne '\
-s/ *#.*$$//; \
-/^[[:space:]]*$$/d; \
-s/^\([^=]\+\)=\(.*\)$$/ifneq ($(origin \1),environment)\n\1 = \2\nendif/p' \
-      $(ENV_LOCAL) \
-    ) \
-  )
-endif
-
-# 2.c) Export everything for downstream includes and recipes
-export
-
-# -----------------------------------------------------------------------------
 # 3) Package metadata (from .env or environment, with defaults)
 #    - SPK_NAME, SPK_VERS, SPK_REV: package identity and versioning
 #    - DISPLAY_NAME, DESCRIPTION, CHANGELOG, MAINTAINER: UI and documentation
