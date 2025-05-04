@@ -58,5 +58,11 @@ native_go:
 teleport_compile_target:
 	@echo "===> Building Teleport v$(PKG_VERS) (OSS) for $(GO_ARCH)" ; $(RUN) sh -c 'cd $(GO_SRC_DIR) && mkdir -p build && for bin in teleport teleport-update tsh tctl tbot; do echo " ... building $$bin"; CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GO_ARCH) go build -trimpath -ldflags "$(GO_LDFLAGS)" -o build/$$bin ./tool/$$bin; done'
 
-# 15) Stage step: installs build/<bin> into the staging area
-go_install_target: teleport_compile_target
+## 15) Stage step: install each OSS binary into the staging area
+go_install_target:
+	@echo "===> Installing Teleport OSS binaries" ; \
+	install -m755 -d $(STAGING_INSTALL_PREFIX)/bin ; \
+	for bin in teleport teleport-update tsh tctl tbot; do \
+	  install -m755 $(GO_SRC_DIR)/build/$$bin $(STAGING_INSTALL_PREFIX)/bin/ ; \
+	done
+	
