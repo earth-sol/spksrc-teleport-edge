@@ -30,12 +30,12 @@ ENV_LOCAL := $(MAKEFILE_DIR)/.env
 
 # 2.a) Load root defaults, conditionally (`?=`) so OS env wins
 ifneq (,$(wildcard $(ENV_ROOT)))
-	$(eval $(shell sed -ne s/ *#.*$$//; /^[[:space:]]*$$/d; s/^\([^=]\+\)=\(.*\)$$/\1 ?= \2/p' $(ENV_ROOT)))
+ $(eval $(shell sed -ne s/ *#.*$$//; /^[[:space:]]*$$/d; s/^\([^=]\+\)=\(.*\)$$/\1 ?= \2/p' $(ENV_ROOT)))
 endif
 
 # 2.b) Apply local overrides, but skip shell-exported vars
 ifneq (,$(wildcard $(ENV_LOCAL)))
-	$(eval $(shell sed -ne s/ *#.*$$//; /^[[:space:]]*$$/d; s/^\([^=]\+\)=\(.*\)$$/ifneq ($(origin \1),environment)\n\1 = \2\nendif/p' $(ENV_LOCAL)))
+ $(eval $(shell sed -ne s/ *#.*$$//; /^[[:space:]]*$$/d; s/^\([^=]\+\)=\(.*\)$$/ifneq ($(origin \1),environment)\n\1 = \2\nendif/p' $(ENV_LOCAL)))
 endif
 
 # 2.c) Export everything for downstream includes and recipes
