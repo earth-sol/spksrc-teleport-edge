@@ -1,45 +1,21 @@
-```markdown
-# Teleport Cross‐Compile Package
+# Teleport Cross-Compile README
 
-This directory contains the **spksrc** cross‐compile rules and support files for building the Teleport Go server binary for Synology NAS (multiple architectures). It produces a standalone `teleport` executable that will later be packaged into the SPK.
-
----
-
-## Table of Contents
-
-1. [Overview](#overview)  
-2. [Prerequisites](#prerequisites)  
-3. [Directory Layout](#directory-layout)  
-4. [Environment Configuration](#environment-configuration)  
-5. [Version & Sources](#version--sources)  
-6. [Digests & Verification](#digests--verification)  
-7. [Building for Architectures](#building-for-architectures)  
-8. [PLIST](#plist)  
-9. [Cleaning & Maintenance](#cleaning--maintenance)  
-10. [Troubleshooting](#troubleshooting)  
-11. [Contributing](#contributing)  
-
----
-
-## Overview
-
-The `cross/teleport` subdirectory defines how to:
-
-- Download the Teleport source archive (`teleport-v$(SPK_VERS).tar.gz`).  
-- Verify its integrity against checksums in `digests`.  
-- Cross‐compile the Go code for each target Synology CPU/OS using `spksrc.cross-go.mk`.  
-- Stage the resulting `teleport` binary under `$(STAGING_DIR)/bin/teleport`.  
-
-Once built, these binaries are picked up by the `spk/teleport` packaging step.
+This directory automates downloading, verifying, extracting, building, and staging the open-source Teleport server binary for inclusion in a Synology SPK. It relies on spksrc’s Go cross-compile framework (`spksrc.cross-go.mk`) and the native Go toolchain provided by `native/go`.
 
 ---
 
 ## Prerequisites
 
-- **spksrc checkout** with the `mk/` directory at the same level as `cross/` and `spk/`.  
-- **Go toolchain** installed in the host environment (`go` binary in `PATH`).  
-- **Make** (GNU Make) and **bash** support.  
-- **Internet access** (to fetch GitHub tarball) or a local mirror of `teleport-v$(SPK_VERS).tar.gz`.
+- A **spksrc** checkout with:
+  ```
+  spksrc/
+  ├── cross/teleport/      ← this directory
+  ├── native/go/           ← Go toolchain package
+  ├── mk/                  ← shared spksrc rules
+  └── toolchain/<DSM-version>/  ← DSM toolchains installed
+  ```
+- Linux host with `bash`, `make`, `tar`, `git`, `svn` or `hg`, and `wget` or `curl`.
+- Network access to fetch Teleport source from GitHub.
 
 ---
 
@@ -47,131 +23,152 @@ Once built, these binaries are picked up by the `spk/teleport` packaging step.
 
 ```
 cross/teleport/
-├── Makefile         # Cross-build instructions
-├── digests          # SHA1, SHA256, MD5 sums for source archives
-├── PLIST            # Files to stage into the binary package
-└── README.md        # This document
+├── Makefile            # orchestrates download → build → stage
+├── digests             # checksums for teleport-v$(PKG_VERS).tar.gz
+└── work/               # auto-generated: extraction, build, install trees
 ```
 
-- **Makefile**  
-  Implements steps 1–2 of the spksrc workflow: environment loading, metadata definition, and inclusion of `spksrc.cross-go.mk`.  
-- **digests**  
-  Contains checksums for the Teleport source tarball. Required for spksrc to verify downloads.  
-- **PLIST**  
-  Lists which files (e.g. `bin/teleport`) to retain in the staging area before packaging.  
+---
+
+## Key Variables
+
+Define or override on the **spksrc root** command line or in `local.mk`:
+
+| Variable        | Meaning                                                                                  |
+|-----------------|------------------------------------------------------------------------------------------|
+| `PKG_NAME`      | Name of the package (default `teleport`)                                                 |
+| `PKG_VERS`      | Upstream Teleport version (default `17.4.7`)                                             |
+| `PKG_EXT`       | Archive extension (default `tar.gz`)                                                     |
+| `PKG_DIST_SITE` | Base URL for source archives (GitHub tags)                                               |
+| `PKG_DIST_NAME` | Generated tag+ext: `v$(PKG_VERS).$(PKG_EXT)`                                              |
+| `PKG_DIST_FILE` | Full filename: `$(PKG_NAME)-$(PKG_DIST_NAME)`                                            |
+| `PKG_DIR`       | Directory after unpack: `$(PKG_NAME)-$(PKG_VERS)`                                        |
+| `GO_SRC_DIR`    | Extraction path: `$(EXTRACT_PATH)/$(PKG_DIR)`                                            |
+| `GO_BIN_DIR`    | Build output dir: `$(GO_SRC_DIR)/build`                                                  |
+| `CGO_ENABLED`   | Enable cgo (default `1`)                                                                  |
+| `GO_LDFLAGS`    | Go linker flags (default `-s -w`)                                                         |
+
+All variables use `?=` so that environment, `local.mk`, or command-line overrides take precedence.
 
 ---
 
-## Environment Configuration
+## Build Workflow (spksrc best practices)
 
-Two levels of configuration are supported via `.env` files:
+All commands run from the **spksrc** root directory.
 
-1. **Global defaults** in `../../teleport.env`:
-   ```env
-   SPK_NAME=teleport
-   SPK_VERS=17.4.7
-   SPK_REV=2
-   PKG_EXT=tar.gz
-   MAINTAINER=earth-sol
-   DESCRIPTION="Teleport provides secure SSH, App, and Database access..."
-   DISPLAY_NAME=Teleport
-   CHANGELOG="\"Initial build\""
-   PKG_DIST_SITE=https://github.com/gravitational/teleport/archive/refs/tags
-   ```
-2. **Local overrides** in `cross/teleport/.env` (optional):
-   ```env
-   SPK_VERS=17.4.8
-   ```
-   
-The Makefile loads `ENV_ROOT` first (using `?=` assignments) so that environment‐exported variables are not overridden, then applies `ENV_LOCAL` overrides unless they were passed via the shell.
-
----
-
-## Version & Sources
-
-- **`PKG_VERS`** controls which GitHub tag is used (e.g. `v17.4.7`).  
-- **`PKG_DIST_SITE`** must point to a URL where `$(PKG_NAME)-v$(PKG_VERS).$(PKG_EXT)` can be downloaded.  
-- **`PKG_DIST_NAME`** and **`PKG_DIST_FILE`** derive the archive name and local filename.
-
----
-
-## Digests & Verification
-
-1. After bumping `PKG_VERS`, run:
-   ```bash
-   cd cross/teleport
-   make digests
-   ```
-   This will:
-   - Download the new tarball
-   - Compute SHA1, SHA256, and MD5
-   - Update `digests` accordingly
-
-2. **Commit** the updated `digests` file before building.
-
----
-
-## Building for Architectures
-
-To build for a single architecture (e.g. `arch-x64-7.2`):
+### 1. Bootstrap spksrc
 
 ```bash
-cd cross/teleport
-make arch-x64-7.2
+cd /path/to/spksrc
+make setup
 ```
 
-To build for all supported architectures:
+This generates `local.mk` and selects your default DSM toolchain (e.g. 7.2) under `toolchain/`.
+
+### 2. Build the native Go toolchain
 
 ```bash
-cd cross/teleport
-make arch-all
+make native/go
 ```
 
-Successful builds will place `bin/teleport` under each architecture’s staging directory.
+This compiles the Go compiler/interpreter that will be used by cross-compile recipes.
+
+### 3. Download and verify Teleport sources
+
+```bash
+make cross/teleport depend
+```
+
+- Fetches `teleport-v$(PKG_VERS).tar.gz` into `distrib/`.
+- Validates checksums against `cross/teleport/digests`.
+
+### 4. Extract sources
+
+```bash
+make cross/teleport extract
+```
+
+Unpacks into `cross/teleport/work/$(PKG_DIR)`.
+
+### 5. Apply patches (if any)
+
+```bash
+make cross/teleport patch
+```
+
+None are provided by default; add `.patch` files and list them in the Makefile to modify upstream code.
+
+### 6. Compile Teleport
+
+```bash
+make cross/teleport teleport_compile_target
+```
+
+Runs `go build` inside the extracted source, producing `work/$(PKG_DIR)/build/teleport` for each target architecture.
+
+### 7. Stage binaries
+
+```bash
+make cross/teleport go_install_target
+```
+
+Installs the compiled `teleport` binary into `work/install/usr/local/teleport/bin`, preparing it for packaging.
+
+### 8. Clean build artifacts
+
+```bash
+make cross/teleport clean
+```
+
+Removes `work/`, forcing a full rebuild next time.
+
+### 9. Build for all architectures
+
+```bash
+make cross/teleport arch-all
+```
+
+Executes download → extract → patch → compile → stage for every supported GOARCH.
 
 ---
 
-## PLIST
+## Output
 
-Ensure `PLIST` contains only the files you want in the final SPK:
+- **Compiled binaries** at `cross/teleport/work/$(PKG_DIR)/build/teleport`
+- **Staging tree** at `cross/teleport/work/install/usr/local/teleport/bin/teleport`
+- **PLIST** generated automatically by spksrc to list installed files
 
-```
-bin:bin/teleport
-```
-
-- `bin:` prefix indicates the destination path within the SPK (`/usr/local/bin/teleport`).  
-- Any entries not present in staging will cause the build to error.
-
----
-
-## Cleaning & Maintenance
-
-- **Clean a single arch**:
-  ```bash
-  make clean-arch-x64-7.2
-  ```
-- **Prune all work directories**:
-  ```bash
-  make clean-all
-  ```
-- **Re-run digests** (if needed):
-  ```bash
-  make digests
-  ```
+Those staging artifacts are consumed by the SPK Makefile (`spk/teleport/Makefile`) to assemble the final `.spk`.
 
 ---
 
 ## Troubleshooting
 
-- **Checksum mismatch**: Verify `digests` matches the actual tarball.  
-- **Missing Go binary**: Ensure `go version` is available and satisfies Teleport’s requirements (Go 1.20+).  
-- **Cross-compile failures**: Confirm `native/go` dependency installed via spksrc’s `bootstrap` rules.
+- **Missing Go toolchain**: if `native/go` fails, ensure you have C compiler and related libraries installed (GCC, libc headers).
+- **Checksum errors**: after bumping `PKG_VERS`, update `cross/teleport/digests` via:
+  ```bash
+  make cross/teleport digests
+  ```
+- **`tr: when not truncating` warnings**: search for `tr 'x' ''` and change to `tr -d 'x'`.
 
 ---
 
-## Contributing
+## Customization
 
-- **Update `digests`** via `make digests`.  
-- **Run full build**: `make arch-all`.  
-- **Verify** staging binaries and PLIST.  
-- **Submit PR** with changes to `Makefile`, `digests`, and `PLIST` as needed.
+- **Version bumps**: override `PKG_VERS` on the command line:
+  ```bash
+  make cross/teleport PKG_VERS=17.5.0 digests arch-all
+  ```
+- **CGO toggle**: build without cgo via:
+  ```bash
+  make cross/teleport CGO_ENABLED=0 arch-all
+  ```
+- **Local overrides**: put any variable assignments in `local.mk` (ignored by Git).
+
+---
+
+## Further Reading
+
+- **spksrc Developer HOW-TO**: https://github.com/SynoCommunity/spksrc/wiki/Developers-HOW-TO  
+- **Teleport on GitHub**: https://github.com/gravitational/teleport  
+- **spksrc.cross-go.mk**: see `mk/spksrc.cross-go.mk` for the full cross-compile logic  

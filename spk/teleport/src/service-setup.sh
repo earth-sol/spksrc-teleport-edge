@@ -8,7 +8,7 @@
 # Path to the Teleport server binary (built in the cross-compile stage)
 TELEPORT="${SYNOPKG_PKGDEST}/bin/teleport"
 # Command invoked by the start-stop-status wrapper
-SERVICE_COMMAND="${TELEPORT} start -c ${CONF_FILE} --pid-file=${PID_FILE}"
+SERVICE_COMMAND="${TELEPORT} start -config="${CONF_FILE}" --data-dir="${DATA_DIR}" --pid-file=${PID_FILE}"
 # Run the service in the background
 SVC_BACKGROUND=y
 
@@ -65,15 +65,9 @@ service_postinst() {
     echo "  proxy_server: ${proxy_address}"
     echo ""
 
-    # --- SSH Service ---
+    # --- Ensure SSH Service is disabled as Synology restricts root ---
     echo "ssh_service:"
-    if [ "${enable_ssh_service}" = "true" ]; then
-      echo "  enabled: true"
-      echo "  listen_addr: ${ssh_listen_address:-0.0.0.0:3022}"
-      [ -n "${ssh_public_address}" ] && echo "  public_addr: ${ssh_public_address}"
-    else
       echo "  enabled: false"
-    fi
     echo ""
 
     # --- Application Service ---

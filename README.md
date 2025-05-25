@@ -1,3 +1,94 @@
+# This is a fork of two upstream projects
+My goal for this fork is to update dependencies, add some quality of life improvements for the Synology Wizard workflow, and integrate the two instructions so it can be followed step by step.
+
+* @[SynoCommunity](https://github.com/SynoCommunity/) maintains [spksrc](https://github.com/SynoCommunity/spksrc) ❤️
+* @[yostinso](https://github.com/yostinso/) created [spksrc-teleport](https://github.com/yostinso/spksrc-teleport) 🙏
+
+# Instructions & notes
+* Please read all the docs from @[SynoCommunity/spksrc](https://github.com/SynoCommunity/spksrc), I’ve also included them after this set of pre-requisites/instructions, & will re-sync as & when needed in order to keep up to date with Mac/Ubuntu/Synology/Teleport versions (and when I have the time to, pull requests are welcome if they are specific to this fork’s code. Upstream fixes should be submitted to the respective repositories.
+* This setup is for connecting a Synology NAS to a Teleport Cluster that is accessible from outside of your LAN, not for having a Synology NAS be the primary node (you shouldn’t really do that anyways, it’s got a much broader vulnerability surface).
+
+## Pre-requisites
+
+* A [Teleport Cluster](https://github.com/gravitational/teleport) installed & reachable
+* Synology DSM 7.2+
+    - The Synology DSM version I have is 7.2.2-72806 Update 3, on these machines: DS1821+, DS923+, DS1823xs+ (all of which are AMD64/x86-64).
+* [Docker v28.1.1+](https://docs.docker.com/get-started/get-docker/) installed, as we’ll be working within a container so that the build environment is isolated with the right dependencies.
+* [Git v2.49.0+](https://git-scm.com/downloads) installed
+
+## Preparing your working environment
+
+### Clone `spksrc-teleport`
+- I prefer to work from a specific directory so as not to clutter & additional variations across environments.
+```sh
+cd /working-directory
+git clone -b master —-depth 1 https://github.com/earth-sol/spksrc-teleport.git
+cd spksrc-teleport
+```
+
+### Adjust config as needed
+[!NOTE]
+For my implementation, I wanted SSH & a Nginx container to be the NAS’ exposed services through Teleport, with Nginx handling reverse proxying for everything in the NAS. The ‘Wizard’ workflow reflects being able to specify settings for that only.
+
+[!TIP]
+If your setup is different or you want to do additional configuration not available in the UI, read through [Teleport’s Config Documentation](https://goteleport.com/docs/reference/config/) & adjust the `src/teleport/src/service-setup.sh` file’s configuration manually. **Make sure to follow proper YAML syntax in the `echo` output**.
+
+## Building Teleport
+[!TIP]
+If you are not building a custom Teleport spk, you can skip to [Installing Teleport](#installing-teleport).
+
+### Update Makefiles
+Update `SPK_VERS` in `cross/teleport/Makefile` and `spk/teleport/Makefile` to the version of Teleport you want to build.
+
+## Compile and build package
+
+# Get spksrc build environment and run from this repo dir
+
+```shell
+docker run -it -v $(pwd):/spksrc ghcr.io/synocommunity/spksrc /bin/bash
+```
+
+# Add Node and Yarn for building the UI
+
+```shell
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && sudo apt-get install -y nodejs
+npm install --global yarn
+```
+
+# Fix VCS stamping issue
+
+```shell
+git config --global --add safe.directory /spksrc
+```
+# Make sure go dependency is up to date
+```shell
+make -C native/go clean
+```
+# Clean and fetch digests
+```shell
+rm local.mk
+make dsm-7.0
+make -C cross/teleport clean
+make -C cross/teleport digests
+```
+# Build the .spk package (first one may not be necessary?)
+```shell
+make -C cross/teleport arch-x64
+make -C spk/teleport arch-x64
+```
+# You should now have a new .spk in
+```shell
+./packages/teleport_x64-*spk
+```
+
+# Installing teleport
+Install the package, but then you'll need to run the following (only once after
+each install/upgrade) to enable it (SSHed into the synology machine)
+```
+sudo /var/packages/teleport/target/scripts/start
+```
+And then stop/start the Teleport service if it was running.
+
 # Discord
 SynoCommunity is now on Discord!
 

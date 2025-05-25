@@ -25,7 +25,7 @@ PKG_EXT      ?= spk
 DEPENDS      := cross/teleport
 
 # 5) Service control configuration
-SERVICE_USER  := root
+SERVICE_USER  := auto
 SERVICE_SETUP := src/service-setup.sh
 STARTABLE     := yes
 

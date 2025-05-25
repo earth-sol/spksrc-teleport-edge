@@ -99,11 +99,11 @@
       },
       {
         "type": "multiselect",
-        "desc": "Enable Teleport SSH service",
+        "desc": "Enable Teleport SSH Agentless service",
         "subitems": [
           {
-            "key": "enable_ssh_service",
-            "desc": "Run Teleport’s built-in SSH server",
+            "key": "enable_ssh_agentless_service",
+            "desc": "Proxy Synology's built-in SSH server",
             "defaultValue": true
           }
         ]

@@ -1,6 +1,7 @@
+```markdown
 # Teleport SPK
 
-This directory contains everything needed to package the Teleport server agent into a Synology `.spk`. Once built, the resulting package can be installed on DSM 7.2 (and later) to turn your NAS into a Teleport node—with SSH, Application, and Database proxy capabilities—and full lifecycle hooks.
+This directory contains everything needed to package the open-source Teleport server agent into a Synology `.spk`. The resulting package installs on DSM 7.2 (and later), turning your NAS into a Teleport node with SSH reverse-tunnel, Application proxy, and Database proxy services—all managed via DSM’s Package Center.
 
 ---
 
@@ -10,41 +11,49 @@ This directory contains everything needed to package the Teleport server agent i
 2. [Prerequisites](#prerequisites)  
 3. [Directory Layout](#directory-layout)  
 4. [Building the SPK](#building-the-spk)  
-5. [Installer Wizard](#installer-wizard)  
-6. [Configuration & Data Paths](#configuration--data-paths)  
-7. [Service Hooks](#service-hooks)  
-8. [Upgrade & Backup](#upgrade--backup)  
-9. [Uninstall Options](#uninstall-options)  
-10. [Permissions & Privileges](#permissions--privileges)  
-11. [Firewall Considerations](#firewall-considerations)  
-12. [Customization & Maintenance](#customization--maintenance)  
-13. [Further Reading](#further-reading)  
+5. [Testing Locally](#testing-locally)  
+6. [Installer Wizard](#installer-wizard)  
+7. [Configuration & Data Paths](#configuration--data-paths)  
+8. [Service Hooks](#service-hooks)  
+9. [Upgrade & Backup](#upgrade--backup)  
+10. [Uninstall Options](#uninstall-options)  
+11. [Best Practices](#best-practices)  
+12. [Customization & Overrides](#customization--overrides)  
+13. [CI/CD Integration](#cicd-integration)  
+14. [Further Reading](#further-reading)  
 
 ---
 
 ## Overview
 
-The Teleport SPK bundles the **Teleport server binary** (compiled via `cross/teleport`) and integrates it with Synology DSM. It provides:
+The Teleport SPK bundles the **Teleport server binary** (built via `cross/teleport`) and integrates it with DSM’s packaging framework. It provides:
 
-- **SSH Service** with built-in reverse-tunnel support  
-- **Application Service** exposing the DSM Control Panel UI plus optional dynamic app registration  
-- **Database Service** with optional dynamic database registration  
-- **Full lifecycle**: install, start/stop/restart, in-place upgrade, backup/restore, and uninstall (with optional data retention)  
+- **SSH Service**  
+  Runs Teleport’s SSH server on your NAS and maintains an outbound reverse tunnel to your trusted Proxy.
+
+- **Application Service**  
+  Exposes the DSM Control Panel UI and can dynamically register cluster-defined web apps.
+
+- **Database Service**  
+  Optionally imports all Teleport-managed database endpoints for secure access.
+
+- **Full lifecycle management**  
+  Install, start, stop, restart, in-place upgrade, backup/restore, and uninstall (with optional data retention).
 
 ---
 
 ## Prerequisites
 
-- A working **spksrc** checkout with:
+- A **spksrc** checkout with:
   ```
   spksrc/
-  ├── cross/teleport/  # builds the Teleport server binary
-  ├── spk/teleport/    # this directory
-  └── mk/              # spksrc core rules
+  ├── cross/teleport/      ← cross-compile rules and Go build
+  ├── spk/teleport/        ← this directory
+  └── mk/                  ← shared spksrc rules
   ```
-- **Go** toolchain available for the cross-compile stage  
-- Internet access (or local mirror) to fetch the Teleport source tarball  
-- Synology DSM 7.2 (or later) for package installation  
+- A working **Go** toolchain under `native/go`.  
+- DSM 7.2 or later installed on your Synology NAS.  
+- A valid Teleport cluster with publicly-trusted TLS certs (so you can skip CA pin).
 
 ---
 
@@ -52,127 +61,172 @@ The Teleport SPK bundles the **Teleport server binary** (compiled via `cross/tel
 
 ```
 spk/teleport/
-├── Makefile            # SPK packaging rules
+├── Makefile               # SPK packaging rules
 ├── conf/
-│   ├── install_uifile  # JSON installer wizard definition
-│   └── privilege       # DSM privilege settings
+│   ├── install_uifile     # JSON definition of the installer wizard
+│   └── privilege          # DSM permission settings (runs as root)
 ├── src/
-│   └── service-setup.sh  # install/upgrade/uninstall/backup hooks
-└── README.md           # (you are here)
+│   ├── service-setup.sh   # install/upgrade/uninstall/backup hooks
+│   └── teleport.sc        # optional firewall rule definitions
+└── README.md              # (you are here)
 ```
 
 ---
 
 ## Building the SPK
 
-1. **Cross-compile** the Teleport server binary:
+Run all commands from the **spksrc root**:
+
+1. **Bootstrap spksrc**  
    ```bash
-   cd spksrc/cross/teleport
-   make digests         # regenerate checksums if updating version
-   make arch-all        # build for all target architectures
+   cd /path/to/spksrc
+   make setup
    ```
-2. **Package** into a `.spk`:
+2. **Cross-compile Teleport**  
    ```bash
-   cd spksrc/spk/teleport
-   make                 # invokes spksrc.spk.mk to assemble the SPK
+   make -C cross/teleport arch-all
    ```
-3. The built `output/teleport-<version>.spk` can then be uploaded to DSM via Package Center.
+3. **Package into .spk**  
+   ```bash
+   make -C spk/teleport
+   ```
+4. The resulting `.spk` lives under `spk/teleport/output/`, ready for DSM.
+
+---
+
+## Testing Locally
+
+Before uploading to DSM:
+
+- **Install the SPK** on a test NAS using Package Center’s *Manual Install*.  
+- **Enable verbose logs** by setting `LOG_LEVEL=debug` in the wizard to troubleshoot startup issues.  
+- **Verify services**:
+  ```bash
+  synopkg status teleport
+  tail -f /var/log/packages/teleport.log
+  ```
+- **Test SSH**:
+  ```bash
+  ssh -p 3022 <node_name>@<proxy_address>
+  ```
 
 ---
 
 ## Installer Wizard
 
-During installation, DSM presents a multi-step wizard (defined in `conf/install_uifile`):
+Collects configuration via DSM’s UI (defined in `conf/install_uifile`):
 
-1. **Cluster Settings**  
-   - **Node name** (`node_name`)  
-   - **Proxy address** (`proxy_address`)  
-   - **Join token** (`join_token`)  
-   - **CA pin (optional)** (`ca_pin`)  
+1. **Cluster settings**  
+   - `node_name`  
+   - `proxy_address` (e.g. `teleport.example.com:443`)  
+   - `join_token`  
+   - Optional `ca_pin` (leave blank to trust system CAs)
 
 2. **DSM UI & SSH Service**  
-   - **DSM UI address** (`dsm_ui_address`)  
-   - **Enable SSH service** (`enable_ssh_service`)  
-   - **SSH listen address** (`ssh_listen_address`)  
-   - **SSH public address** (`ssh_public_address`)  
+   - `dsm_ui_address` (e.g. `localhost:5001`)  
+   - `enable_ssh_service`  
+   - `ssh_listen_address`  
+   - `ssh_public_address`
 
-3. **Configuration & Data Paths**  
-   - **Config directory** (`config_dir`)  
-   - **Data directory** (`data_dir`)  
+3. **Storage paths**  
+   - `config_dir`  
+   - `data_dir`
 
-4. **Dynamic Resource Discovery**  
-   - **Enable dynamic app registration** (`enable_dynamic_apps`)  
-   - **Enable dynamic database registration** (`enable_dynamic_databases`)  
+4. **Dynamic resources**  
+   - `enable_dynamic_apps`  
+   - `enable_dynamic_databases`
 
-5. **Cleanup Options**  
-   - **Remove config & data on uninstall** (`remove_config_data`)  
+5. **Cleanup**  
+   - `remove_config_data`
 
-All of these keys are exported into `service-setup.sh` and drive the generated `teleport.yaml`.
+Wizard variables map directly into `service-setup.sh`.
 
 ---
 
 ## Configuration & Data Paths
 
-- **`teleport.yaml`** is written to:
-  - the user-specified **`config_dir`**, or  
-  - `/var/packages/${SPK_NAME}/etc/teleport.yaml` by default  
-- **Data** is stored under:
-  - the user-specified **`data_dir`**, or  
-  - `${SYNOPKG_PKGVAR}` by default  
-- Both directories are created automatically if they don’t already exist.
+- **`teleport.yaml`** is generated to:
+  - `${config_dir}` if set, otherwise `/var/packages/teleport/etc/teleport.yaml`.
+- **Data directory**:
+  - `${data_dir}` if set, otherwise the package var folder.
+- Both paths are auto-created at install time.
 
 ---
 
 ## Service Hooks
 
-The `src/service-setup.sh` script handles every lifecycle event:
+`src/service-setup.sh` implements:
 
-- **service_preinst**: pre-install sanity check (no-op on DSM7+)  
-- **service_postinst**: writes `teleport.yaml`, sets up SSH, App & DB services  
-- **service_preupgrade** / **service_postupgrade**: backup and restore config/data  
-- **service_preuninst** / **service_postuninst**: cleanup based on `remove_config_data`  
-- **service_save** / **service_restore**: manual backup/restore under `${SYNOPKG_PKGVAR}/backup`
+- **service_preinst**: no-op on DSM7+  
+- **service_postinst**: writes `teleport.yaml` and creates dirs  
+- **service_preupgrade** / **service_postupgrade**: backup & restore  
+- **service_preuninst** / **service_postuninst**: optional cleanup  
+- **service_save** / **service_restore**: tarball backup under `${SYNOPKG_PKGVAR}/backup`
 
 ---
 
 ## Upgrade & Backup
 
-- **In-place upgrades** preserve all configuration and data automatically.  
-- **Full uninstall/reinstall** honors the “Remove config & data” option in the wizard or the DSM remove-data checkbox.  
-- Backups are timestamped tarballs of both `teleport.yaml` and the data directory.
+- **In-place upgrades** preserve all settings and data.  
+- **Reinstall with data**: uninstall without “Remove data” then install.  
+- **Full purge**: check “Remove configuration and data” in DSM.  
+- **Backups**: manually invoke `synopkg backup teleport` if supported.
 
 ---
 
 ## Uninstall Options
 
-DSM’s Package Center offers a “Remove configuration and data” checkbox. The wizard’s **`remove_config_data`** setting provides additional control over custom paths.
+DSM’s Package Center “Remove configuration and data” checkbox or wizard’s `remove_config_data` flag allows full cleanup of custom paths.
 
 ---
 
-## Permissions & Privileges
+## Best Practices
 
-The `conf/privilege` file configures all hooks and the Teleport daemon to run as **root**, which is required to bind privileged ports (SSH, HTTPS).
+- **Keep variables in Makefiles** with `?=` defaults; avoid inline `.env` parsing.  
+- **Use `local.mk`** for site-specific overrides, never commit it.  
+- **Split cross vs. SPK logic**: `cross/` only defines `PKG_*`; `spk/` only defines `SPK_*`.  
+- **Test each DSM rebuild** in a VM or secondary NAS before production.  
+- **Use semantic versioning**: bump `SPK_REV` for packaging tweaks without upstream changes.  
+- **Automate checksum updates** by running `make digests` in `cross/teleport` when upgrading Teleport.
 
 ---
 
-## Firewall Considerations
+## Customization & Overrides
 
-Teleport agents use **outbound** reverse tunnels to the Proxy—**no inbound firewall rules** are required on the NAS for cluster connectivity.
+- **Command-line overrides**:
+  ```bash
+  make -C cross/teleport PKG_VERS=17.5.0 arch-all
+  make -C spk/teleport SPK_REV=3
+  ```
+- **local.mk** overrides (ignored by Git):
+  ```makefile
+  PKG_VERS = 17.5.0
+  SPK_REV  = 3
+  ```
+- **Wizard tweaks**: modify `conf/install_uifile` and adjust `service-setup.sh` accordingly.
 
 ---
 
-## Customization & Maintenance
+## CI/CD Integration
 
-- **Bump version**: update `teleport.env`, run `make digests` in `cross/teleport`, then rebuild.  
-- **Adjust wizard**: edit `conf/install_uifile` to add or rename installer fields and update `service-setup.sh` accordingly.  
-- **Modify service behavior**: update `src/service-setup.sh` hooks.  
-- **Change package contents**: edit `spk/teleport-edge/Makefile` or add scripts under `src/`.
+- **Lint your Makefiles**:
+  ```bash
+  make -C cross/teleport -n
+  make -C spk/teleport    -n
+  ```
+- **Automate builds** in your CI pipeline:
+  ```bash
+  git checkout release-17.5.0
+  make setup
+  make native/go cross/teleport arch-all spk/teleport
+  ```
+- **Archive artifacts**: store `.spk` and `digests` as build outputs for reproducibility.
 
 ---
 
 ## Further Reading
 
-- SynoCommunity spksrc **Developer HOW-TO** guide  
+- SynoCommunity spksrc **Developer HOW-TO**  
 - Teleport **Configuration Reference**: https://goteleport.com/docs/reference/config  
-- Teleport **Dynamic Registration** docs (Apps & Databases)  
-- Teleport **SSH Service** & **Reverse Tunnel** design  
+- spksrc.cross-go.mk & spksrc.spk.mk for advanced packaging hooks  
+```
