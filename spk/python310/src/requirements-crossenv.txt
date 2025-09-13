@@ -60,7 +60,7 @@ Pillow==9.5.0
 # Depends: c-ares
 # Require environment variables
 #  PYCARES_USE_SYSTEM_LIB=1
-pycares==4.4.0
+pycares==4.9.0
 
 # [pycurl]
 # Depends: curl
