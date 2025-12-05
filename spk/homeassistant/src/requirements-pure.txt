@@ -89,7 +89,7 @@ svg.py==1.6.0
 text_unidecode==1.3
 typing_extensions==4.12.2
 uart_devices==0.1.1
-urllib3==1.26.20
+urllib3==2.6.0
 usb_devices==0.4.5
 voluptuous==0.15.2
 voluptuous_openapi==0.0.5
