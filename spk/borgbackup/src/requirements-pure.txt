@@ -22,4 +22,4 @@ ruamel.yaml==0.18.10
 #six                                    ==> python312
 types_python_dateutil==2.9.0.20241206
 typing_extensions==4.13.2
-urllib3==2.4.0
+urllib3==2.6.3
