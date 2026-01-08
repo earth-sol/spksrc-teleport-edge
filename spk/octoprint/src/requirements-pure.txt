@@ -56,6 +56,6 @@ urllib3==2.2.1
 watchdog==2.3.1
 webassets==2.0
 websocket_client==1.6.1
-Werkzeug==2.2.3
+Werkzeug==3.1.5
 zeroconf==0.132.2
 zipstream_ng==1.7.1
