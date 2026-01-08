@@ -34,6 +34,6 @@ rqdb==1.6.1
 tomli==2.0.2
 tox==4.23.2
 typing_extensions==4.12.2
-urllib3==2.2.3
+urllib3==2.6.3
 #virtualenv                  ==> py311
 #yarl                        ==> crossenv
