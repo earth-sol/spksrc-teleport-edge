@@ -1,6 +1,6 @@
 pip==23.2.1
 setuptools==63.4.3
-wheel==0.41.2
+wheel==0.46.2
 #
 cffi==1.15.1
 cryptography==41.0.3
