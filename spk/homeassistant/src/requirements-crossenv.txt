@@ -46,7 +46,7 @@ orjson==3.10.12
 ### pandas==2.2.3               # maturin error, install from index (available for x86_64, aarch64)
 ### pillow==11.0.0              # use python/pillow_ha
 propcache==0.2.1
-protobuf==5.28.3
+protobuf==7.34.0rc1
 psutil==6.1.0
 pyads==3.4.0
 pycares==4.5.0
