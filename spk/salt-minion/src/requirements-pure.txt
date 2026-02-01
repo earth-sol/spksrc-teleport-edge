@@ -1,6 +1,6 @@
 # https://github.com/saltstack/salt/blob/master/requirements/static/pkg/py3.11/linux.txt
 
-salt==3006.1
+salt==3006.17
 
 annotated-types==0.5.0
 autocommand==2.2.2
