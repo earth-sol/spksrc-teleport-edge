@@ -3,7 +3,7 @@ setuptools==63.4.3
 wheel==0.41.2
 #
 cffi==1.15.1
-cryptography==41.0.3
+cryptography==46.0.5
 Cython==0.29.36
 flit==3.9.0
 maturin==1.2.3
