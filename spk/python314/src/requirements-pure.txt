@@ -13,7 +13,7 @@ certifi
 # to create their local virtualenv
 # in order to install wheels within
 # their running environment
-virtualenv==20.34.0
+virtualenv==20.36.1
 
 # Other mandatory wheels that
 # gets install by default as
