@@ -4,7 +4,7 @@ babelfish==0.5.5
 beautifulsoup4==4.9.3
 charade==1.0.3
 chardet==2.3.0
-configobj==5.0.6
+configobj==5.0.9
 dogpile.cache==0.9.2
 dogpile.core==0.4.1
 enzyme==0.4.1
